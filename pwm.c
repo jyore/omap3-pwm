@@ -48,7 +48,7 @@
 /* default TCLR is off state */
 #define DEFAULT_TCLR (GPT_TCLR_PT | GPT_TCLR_TRG_OVFL_MATCH | GPT_TCLR_CE | GPT_TCLR_AR) 
 
-#define DEFAULT_PWM_FREQUENCY 1024
+#define DEFAULT_PWM_FREQUENCY 1023
 
 static int frequency = DEFAULT_PWM_FREQUENCY;
 module_param(frequency, int, S_IWUSR);
