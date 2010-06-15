@@ -51,7 +51,7 @@
 #define DEFAULT_PWM_FREQUENCY 1024
 
 static int frequency = DEFAULT_PWM_FREQUENCY;
-module_param(frequency, int, S_IRUGO);
+module_param(frequency, int, S_IWUSR);
 MODULE_PARM_DESC(frequency, "The PWM frequency, power of two, max of 16384");
 
 
