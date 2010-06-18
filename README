@@ -77,6 +77,15 @@ root@beagleboard:~# echo 1024 > /sys/module/pwm/parameters/frequency
 root@beagleboard:~# cat /dev/pwm10                                              
 PWM10 Frequency 1024 Hz Duty Cycle 79%                          
 
+Currently you should follow this order to setup the frequency and duty cycle correctly
+1) Set Frequency
+root@beagleboard:~# echo <frequency> > /sys/module/pwm/parameters/frequency            
+
+2) Set Duty cycle
+root@beagleboard:~# echo <duty cycle> > /dev/pwm10
+
+Doing duty cycle first and frequency wont work right now as the frequency input is not being polled.
+
 The driver takes care of muxing the output pin correctly and restores the original
 muxing when it unloads. The default muxing by Gumstix for the PWM pins is to be
 GPIO. 
