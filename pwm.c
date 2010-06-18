@@ -233,6 +233,9 @@ static ssize_t pwm_read(struct file *filp, char __user *buff, size_t count,
 	if (down_interruptible(&pwm_dev.sem)) 
 		return -ERESTARTSYS;
 
+	if(set_pwm_frequency())
+		error = -EIO;
+
 	if (pwm_dev.gpt.tclr & GPT_TCLR_ST) {
 		duty_cycle = (100 * (pwm_dev.gpt.tmar - pwm_dev.gpt.tldr)) 
 				/ pwm_dev.gpt.num_freqs;
@@ -287,6 +290,9 @@ static ssize_t pwm_write(struct file *filp, const char __user *buff,
 		len = 8;
 	else
 		len = count;
+	
+	if(set_pwm_frequency())
+		error = -EIO;
 		
 	memset(pwm_dev.user_buff, 0, 16);
 
@@ -443,4 +449,5 @@ module_exit(pwm_exit);
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Scott Ellis - Jumpnow");
 MODULE_DESCRIPTION("PWM example for Gumstix Overo"); 
+
 
