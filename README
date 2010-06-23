@@ -22,8 +22,8 @@ Follow these steps to build. Using an overo for the example.
 
 $ git clone git://github.com/scottellis/omap3-pwm.git
 $ cd omap3-pwm
-$ <edit> overo-source-me.txt
-$ source overo-source-me.txt
+$ <edit> beagle-source-me.txt
+$ source beagle-source-me.txt
 $ make 
 
 Next copy the pwm.ko file to your board.
@@ -31,28 +31,38 @@ Next copy the pwm.ko file to your board.
 Once on the system, use insmod to load using the optional frequency parameter.
 The default frequency is 1024 Hz. Use multiples of two with a max of 16384.
 
-root@overo# ls
+pwm9_enable,pwm10_enable and pwm11_enable and frequency are load time parameters
+
+
+root@beagleboard# ls
 pwm.ko
 
-root@overo# insmod pwm.ko
+root@beagleboard# insmod pwm.ko pwm9_enable=1
 
 The driver implements a character device interface. When it loads, it will 
-create a /dev/pwm10 entry.
- 
+create a /dev/pwm9 entry.
+
+To setup multiple pwm signals on the GPT9/10/11 you should use 
+
+root@beagleboard# insmod pwm.ko pwm9_enable=1 pwm10_enable=1
+
+This will work similarly for other combinations as well.
+
+
 Then to issue commands you can use any program that can do file I/O. 
 cat and echo will work. 
 
-root@overo# cat /dev/pwm10
+root@beagleboard# cat /dev/pwm9
 PWM10 Frequency 1024 Hz Stopped
 
-root@overo# echo 50 > /dev/pwm10
+root@beagleboard# echo 50 > /dev/pwm9
 
-root@overo:~# cat /dev/pwm10
+root@beagleboard:~# cat /dev/pwm9
 PWM10 Frequency 1024 Hz Duty Cycle 50%
 
-root@overo:~# echo 80 > /dev/pwm10
+root@beagleboard:~# echo 80 > /dev/pwm9
 
-root@overo:~# cat /dev/pwm10
+root@beagleboard:~# cat /dev/pwm9
 PWM10 Frequency 1024 Hz Duty Cycle 80%
 
 You can put an oscope on pin 28 of the expansion board to see the signal.
@@ -86,18 +96,13 @@ root@beagleboard:~# echo <duty cycle> > /dev/pwm10
 
 Doing duty cycle first and frequency wont work right now as the frequency input is not being polled.
 
-The driver takes care of muxing the output pin correctly and restores the original
-muxing when it unloads. The default muxing by Gumstix for the PWM pins is to be
-GPIO. 
+The driver takes care of muxing the output pin correctly and restores the original muxing when it unloads. 
+The default muxing by Beagleboard for the PWM pins is to be GPIO. 
 
-For now, if you want to change which timer is being used, look at pwm_init().
+
 
 TODO:
-
-1. Optionally support all 4 PWM timers simultaneously accessed through
-   /dev/pwm8, /dev/pwm9, etc... Maybe on driver load a module arg could
-   specify which timers it should take control of. Requires adding some
-   minors and some bookkeeping in the f_op calls. 
+1. Implement frequency and duty cycle changing as ioctl() calls.
 
 2. Support switching PWM10 and 11 to use the 13MHz clock as FCLK
    instead of the default 32kHz clock if the user chooses. This gives
