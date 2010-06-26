@@ -96,6 +96,28 @@
 #define GPT_TCLR_CAPT_MODE      (1 << 13)	/* capture mode config */
 #define GPT_TCLR_GPO_CFG        (1 << 14)	/* pwm or capture mode */
 
+#define PWM_NR 3
+
+#ifndef PWM_MAJOR
+#define PWM_MAJOR 0   /* dynamic major by default */
+#endif
+
+int gpt_offset[PWM_NR]={GPT9_MUX_OFFSET,GPT10_MUX_OFFSET,GPT11_MUX_OFFSET};
+int gpt_base[PWM_NR]={PWM9_CTL_BASE,PWM10_CTL_BASE,PWM11_CTL_BASE};
+
+/*
+ * Ioctl definitions
+ */
+
+/* Use 'k' as magic number */
+#define PWM_IOC_MAGIC  0x00 
+/* Please use a different 8-bit number in your code */
+#define PWM_DUTYCYCLE _IOW(PWM_IOC_MAGIC ,  1, int)
+#define PWM_FREQUENCY _IOW(PWM_IOC_MAGIC ,  2, int)
+#define PWM_ON _IO(PWM_IOC_MAGIC ,  3)
+#define PWM_OFF _IO(PWM_IOC_MAGIC ,  4)
+#define PWM_IOC_MAXNR 4
+
 
 #endif /* ifndef PWM_H */
 
