@@ -69,7 +69,7 @@ You can put an oscope on pin 28 of the expansion board to see the signal.
 Use pin 15 for ground. Or you can measure the voltage on pin 28 and you'll
 see the duty cycle percentage of 1.8v.
 
-To change frequency/duty_cycle you can also use the ioctl() calls (example provided in the /example directory). 
+To change frequency/duty_cycle you can also use the ioctl() calls . 
 
 
 Currently you should follow this order to setup the frequency and duty cycle correctly
