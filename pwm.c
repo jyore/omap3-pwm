@@ -36,6 +36,7 @@
 #include <asm/uaccess.h>
 #include <linux/moduleparam.h>
 #include <linux/string.h>
+#include <linux/ioctl.h> 
 
 #include "pwm.h"
 
@@ -49,15 +50,19 @@
 /* default TCLR is off state */
 #define DEFAULT_TCLR (GPT_TCLR_PT | GPT_TCLR_TRG_OVFL_MATCH | GPT_TCLR_CE | GPT_TCLR_AR) 
 
-#define DEFAULT_PWM_FREQUENCY 1023
+#define DEFAULT_PWM_FREQUENCY 1024
+#define DEFAULT_DUTY_CYCLE 100
 
 
 
 #define MAX 1000 //some high value
 
-static int frequency = DEFAULT_PWM_FREQUENCY;
-module_param(frequency, int, S_IWUSR);
-MODULE_PARM_DESC(frequency, "The PWM frequency, power of two, max of 16384");
+static int frequency_param = DEFAULT_PWM_FREQUENCY;
+module_param(frequency_param, int, S_IWUSR);
+MODULE_PARM_DESC(frequency_param, "The PWM frequency, power of two, max of 16384");
+
+static int duty_cycle_param = DEFAULT_DUTY_CYCLE;
+module_param(duty_cycle_param, int, S_IWUSR);
 
 static int pwm9_enable=0;
 module_param(pwm9_enable, int, S_IWUSR);
@@ -93,10 +98,11 @@ struct pwm_dev {
 	struct class *class;
 	struct semaphore sem;
 	struct gpt gpt;
+	int frequency,duty_cycle;
 	char *user_buff;
 };
 struct pwm_dev *pwm_devs;
-unsigned int duty_cycle;
+//unsigned int duty_cycle;
 
 static int init_mux(struct pwm_dev *dev)
 {
@@ -137,27 +143,27 @@ static int restore_mux(struct pwm_dev *dev)
 static int set_pwm_frequency(struct pwm_dev *dev)
 {
 	void __iomem *base;
-
+	//int frequency = dev->frequency;
 	base = ioremap(dev->gpt.gpt_base, GPT_REGS_PAGE_SIZE);
 	if (!base) {
 		printk(KERN_ALERT "set_pwm_frequency(): ioremap failed\n");
 		return -1;
 	}
 
-	if (frequency < 0) {
-		frequency = DEFAULT_PWM_FREQUENCY;
+	if (dev->frequency < 0) {
+		dev->frequency = DEFAULT_PWM_FREQUENCY;
 	} else {
 		/* only powers of two, for simplicity */
-		frequency &= ~0x01;
+		dev->frequency &= ~0x01;
 
-		if (frequency > (dev->gpt.input_freq / 2)) 
-			frequency = dev->gpt.input_freq / 2;
-		else if (frequency == 0)
-			frequency = DEFAULT_PWM_FREQUENCY;
+		if (dev->frequency > (dev->gpt.input_freq / 2)) 
+			dev->frequency = dev->gpt.input_freq / 2;
+		else if (dev->frequency == 0)
+			dev->frequency = DEFAULT_PWM_FREQUENCY;
 	}
 
 	/* PWM_FREQ = 32768 / ((0xFFFF FFFF - TLDR) + 1) */
-	dev->gpt.tldr = 0xFFFFFFFF - ((dev->gpt.input_freq / frequency) - 1);
+	dev->gpt.tldr = 0xFFFFFFFF - ((dev->gpt.input_freq / dev->frequency) - 1);
 
 	/* just for convenience */	
 	dev->gpt.num_freqs = 0xFFFFFFFE - dev->gpt.tldr;	
@@ -217,10 +223,10 @@ static int set_duty_cycle(struct pwm_dev *dev)
 	unsigned int new_tmar;
 	pwm_off(dev);
 
-	if (duty_cycle == 0)
+	if (dev->duty_cycle == 0)
 		return 0;
  
-	new_tmar = (duty_cycle * dev->gpt.num_freqs) / 100;
+	new_tmar = (dev->duty_cycle * dev->gpt.num_freqs) / 100;
 
 	if (new_tmar < 1) 
 		new_tmar = 1;
@@ -231,6 +237,69 @@ static int set_duty_cycle(struct pwm_dev *dev)
 	
 	return pwm_on(dev);
 }
+
+int pwm_ioctl(struct inode *inode, struct file *filp,
+                unsigned int cmd, unsigned long arg)
+{
+
+	//int err = 0, tmp;
+	int retval = 0;
+    	struct pwm_dev *dev = filp->private_data; 
+	/*
+	 * extract the type and number bitfields, and don't decode
+	 * wrong cmds: return ENOTTY (inappropriate ioctl) before access_ok()
+	 */
+	if (_IOC_TYPE(cmd) != PWM_IOC_MAGIC) return -ENOTTY;
+	if (_IOC_NR(cmd) > PWM_IOC_MAXNR) return -ENOTTY;
+
+	/*
+	 * the direction is a bitmask, and VERIFY_WRITE catches R/W
+	 * transfers. `Type' is user-oriented, while
+	 * access_ok is kernel-oriented, so the concept of "read" and
+	 * "write" is reversed
+	 */
+	/*if (_IOC_DIR(cmd) & _IOC_READ)
+		err = !access_ok(VERIFY_WRITE, (void __user *)arg, _IOC_SIZE(cmd));
+	else if (_IOC_DIR(cmd) & _IOC_WRITE)
+		err =  !access_ok(VERIFY_READ, (void __user *)arg, _IOC_SIZE(cmd));
+	if (err) return -EFAULT;*/
+
+	switch(cmd) {
+
+	  case PWM_ON:
+		if(pwm_on(dev))
+		retval = -EIO;
+		break;
+
+	  case PWM_OFF:
+		if(pwm_off(dev))
+		retval = -EIO;
+		break;
+	 
+	  case PWM_DUTYCYCLE:
+		dev->duty_cycle =arg;
+		if(set_duty_cycle(dev))
+		retval = -EIO;
+		break;
+
+	  case PWM_FREQUENCY:
+		dev->frequency =arg;
+		if(set_pwm_frequency(dev))
+		retval = -EIO;
+
+		//if(set_duty_cycle(dev))
+		//retval = -EIO;
+		break;
+
+	  default:  /* redundant, as cmd was checked against MAXNR */
+		return -ENOTTY;
+	}
+	return retval;
+
+}
+
+
+
 
 static ssize_t pwm_read(struct file *filp, char __user *buff, size_t count,
 			loff_t *offp)
@@ -244,7 +313,8 @@ static ssize_t pwm_read(struct file *filp, char __user *buff, size_t count,
 
 	/* tell the user there is no more */
 	if (*offp > 0) 
-		return 0;
+		return 0;	
+
 
 	if (down_interruptible(&(dev->sem))) 
 		return -ERESTARTSYS;
@@ -253,17 +323,17 @@ static ssize_t pwm_read(struct file *filp, char __user *buff, size_t count,
 		error = -EIO;
 
 	if (dev->gpt.tclr & GPT_TCLR_ST) {
-		duty_cycle = (100 * (dev->gpt.tmar - dev->gpt.tldr)) 
+		dev->duty_cycle = (100 * (dev->gpt.tmar - dev->gpt.tldr)) 
 				/ dev->gpt.num_freqs;
 
 		snprintf(dev->user_buff, USER_BUFF_SIZE,
 				"PWM%d Frequency %u Hz Duty Cycle %u%%\n",
-				dev->gpt.timer_num, frequency, duty_cycle);
+				dev->gpt.timer_num, dev->frequency, dev->duty_cycle);
 	}
 	else {
 		snprintf(dev->user_buff, USER_BUFF_SIZE,
 				"PWM%d Frequency %u Hz Stopped\n",
-				dev->gpt.timer_num, frequency);
+				dev->gpt.timer_num, dev->frequency);
 	}
 
 	len = strlen(dev->user_buff);
@@ -319,7 +389,7 @@ static ssize_t pwm_write(struct file *filp, const char __user *buff,
 		goto pwm_write_done;
 	}
 
-	duty_cycle = simple_strtoul(dev->user_buff, NULL, 0);
+	dev->duty_cycle = simple_strtoul(dev->user_buff, NULL, 0);
 
 	set_duty_cycle(dev);
 
@@ -339,7 +409,10 @@ static int pwm_open(struct inode *inode, struct file *filp)
 {
 	int error = 0;
 	struct pwm_dev *dev; /* device information */
-
+	/*int d=PWM_DUTYCYCLE;
+	int f=PWM_FREQUENCY;
+	int on=PWM_ON;
+	int off=PWM_OFF;*/
 	dev = container_of(inode->i_cdev, struct pwm_dev, cdev);
 	filp->private_data = dev; /* for other methods */
 
@@ -358,6 +431,7 @@ static int pwm_open(struct inode *inode, struct file *filp)
 		if (!dev->user_buff)
 			error = -ENOMEM;
 	}
+//	printk(KERN_ALERT"\n%d %d %d %d\n",f,d,on,off);
 
 	up(&(dev->sem));
 
@@ -369,6 +443,7 @@ static struct file_operations pwm_fops = {
 	.read = pwm_read,
 	.write = pwm_write,
 	.open = pwm_open,
+	.ioctl = pwm_ioctl,
 };
 
 static int __init pwm_init_cdev(struct pwm_dev *dev, int index)
@@ -423,13 +498,10 @@ static void __exit pwm_exit(void)
 			d= MKDEV(MAJOR(dv), MINOR(dv)+i);
 			device_destroy(pwm_devs[i].class, d);
 			class_destroy(pwm_devs[i].class);
-
 			cdev_del(&pwm_devs[i].cdev);
 			unregister_chrdev_region(d, 1);
-
 			pwm_off(&pwm_devs[i]);
 			restore_mux(&pwm_devs[i]);
-
 			if (pwm_devs[i].user_buff)
 				kfree(pwm_devs[i].user_buff);
 			}
@@ -457,8 +529,6 @@ static int __init pwm_init(void)
 
 
 	error= alloc_chrdev_region(&dv, min, count,"pwm");
-	//pwm_major=MAJOR(dev);
-	//pwm_minor=MINOR(dev);
 	
 	if (error < 0) {
 		printk(KERN_ALERT "alloc_chrdev_region() failed: %d \n",error);
@@ -485,21 +555,17 @@ static int __init pwm_init(void)
 				pwm_devs[i].gpt.tldr = DEFAULT_TLDR;
 				pwm_devs[i].gpt.tmar = DEFAULT_TMAR;
 				pwm_devs[i].gpt.tclr = DEFAULT_TCLR;
-				printk(KERN_ALERT"1\n");
+				pwm_devs[i].frequency = frequency_param;
+				pwm_devs[i].duty_cycle = duty_cycle_param;
 				sema_init(&pwm_devs[i].sem, 1);
-				printk(KERN_ALERT"1\n");	
 				if (pwm_init_cdev(&pwm_devs[i],i))
 					goto init_fail_1;
-				printk(KERN_ALERT"1\n");	
 				if (pwm_init_class(&pwm_devs[i],i))
 					//er_count=i;
 					goto init_fail_2;
-				printk(KERN_ALERT"1\n");
 				}
-				printk(KERN_ALERT"1\n");
 			
 	}
-	printk(KERN_ALERT"1\n");
 	return 0;
 init_fail_2:
 	for(j=0;j<PWM_NR;j++){
