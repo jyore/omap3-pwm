@@ -69,7 +69,10 @@ You can put an oscope on pin 28 of the expansion board to see the signal.
 Use pin 15 for ground. Or you can measure the voltage on pin 28 and you'll
 see the duty cycle percentage of 1.8v.
 
-To change frequency/duty_cycle you can also use the ioctl() calls (example provided in the /example directory). 
+To change frequency/duty_cycle you can also use the ioctl() calls . 
+To change the pulse direction i.e. a positive pulse pwm or a negative pulse pwm, make the SCPWM call to the ioctl interface.
+Passing a value of 1 will cause a positive pulse while anyother value gives a negative pulse. 
+By default the PWM signal has a positive pulse.
 
 
 Currently you should follow this order to setup the frequency and duty cycle correctly
@@ -123,5 +126,6 @@ index cebe1f5..2dad30c 100644
  # CONFIG_OMAP_MUX is not set
  CONFIG_OMAP_MCBSP=y
  CONFIG_OMAP_MBOX_FWK=m
+
 
 
