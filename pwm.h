@@ -57,7 +57,6 @@
 #define PWM10_CTL_BASE		GPTIMER10
 #define PWM11_CTL_BASE		GPTIMER11
 
-
 /* GPT register offsets */
 #define GPT_TIOCP_CFG 0x010
 #define GPT_TISTAT    0x014
@@ -77,7 +76,7 @@
 #define GPT_TNIR      0x04C
 #define GPT_TCVR      0x050
 #define GPT_TOCR      0x054
-#define GPT_TOWR      0x058   
+#define GPT_TOWR      0x058
 
 /* TCLR bits for PWM */
 #define GPT_TCLR_ST     	(1 << 0)	/* stop/start */
@@ -90,7 +89,7 @@
 
 #define GPT_TCLR_TRG_MASK 	(3 << 10)	/* trigger output mode */
 #define GPT_TCLR_TRG_OVFL	(1 << 10)	/* trigger on overflow */
-#define GPT_TCLR_TRG_OVFL_MATCH	(2 << 10)	/* trigger on overflow and match */	
+#define GPT_TCLR_TRG_OVFL_MATCH	(2 << 10)	/* trigger on overflow and match */
 
 #define GPT_TCLR_PT     	(1 << 12)	/* pulse/toggle modulation */
 #define GPT_TCLR_CAPT_MODE      (1 << 13)	/* capture mode config */
@@ -99,25 +98,24 @@
 #define PWM_NR 3
 
 #ifndef PWM_MAJOR
-#define PWM_MAJOR 0   /* dynamic major by default */
+#define PWM_MAJOR 0		/* dynamic major by default */
 #endif
 
-int gpt_offset[PWM_NR]={GPT9_MUX_OFFSET,GPT10_MUX_OFFSET,GPT11_MUX_OFFSET};
-int gpt_base[PWM_NR]={PWM9_CTL_BASE,PWM10_CTL_BASE,PWM11_CTL_BASE};
+int gpt_offset[PWM_NR] =
+    { GPT9_MUX_OFFSET, GPT10_MUX_OFFSET, GPT11_MUX_OFFSET };
+int gpt_base[PWM_NR] = { PWM9_CTL_BASE, PWM10_CTL_BASE, PWM11_CTL_BASE };
 
 /*
  * Ioctl definitions
  */
 
-/* Use 'k' as magic number */
-#define PWM_IOC_MAGIC  0x00 
-/* Please use a different 8-bit number in your code */
+#define PWM_IOC_MAGIC  0x00
+
 #define PWM_DUTYCYCLE _IOW(PWM_IOC_MAGIC ,  1, int)
 #define PWM_FREQUENCY _IOW(PWM_IOC_MAGIC ,  2, int)
 #define PWM_ON _IO(PWM_IOC_MAGIC ,  3)
 #define PWM_OFF _IO(PWM_IOC_MAGIC ,  4)
-#define PWM_IOC_MAXNR 4
-
+#define SCPWM _IOW(PWM_IOC_MAGIC ,  5, int)
+#define PWM_IOC_MAXNR 5
 
 #endif /* ifndef PWM_H */
-
