@@ -249,10 +249,13 @@ static int set_duty_cycle(struct pwm_dev *dev)
 
 	new_tmar = (dev->duty_cycle * dev->gpt.num_freqs) / 100;
 
-	if (new_tmar < 1)
+	if (new_tmar < 1) {
 		new_tmar = 1;
-	else if (new_tmar > dev->gpt.num_freqs)
+		printk(KERN_ALERT "new_tmar = 1\n");
+	} else if (new_tmar > dev->gpt.num_freqs) {
 		new_tmar = dev->gpt.num_freqs;
+		printk(KERN_ALERT "new_tmar = dev->gpt.num_freqs\n");
+	}
 
 	dev->gpt.tmar = dev->gpt.tldr + new_tmar;
 
@@ -299,13 +302,25 @@ int pwm_ioctl(struct inode *inode, struct file *filp,
 			retval = -EIO;
 		break;
 
-	case PWM_DUTYCYCLE:
+	case PWM_SET_DUTYCYCLE:
 		dev->duty_cycle = arg;
 		if (set_duty_cycle(dev))
 			retval = -EIO;
 		break;
 
-	case PWM_FREQUENCY:
+	case PWM_GET_DUTYCYCLE:
+
+		if (dev->gpt.tclr & GPT_TCLR_ST) {	//PWM is on
+			retval = (100 * (dev->gpt.tmar - dev->gpt.tldr))
+			    / dev->gpt.num_freqs;	//actual duty cycle that was setup
+		} else {
+			printk(KERN_ALERT "PWM%d is OFF\n", dev->gpt.timer_num);
+			retval = -EIO;
+		}
+
+		break;
+
+	case PWM_SET_FREQUENCY:
 		dev->frequency = arg;
 		if (set_pwm_frequency(dev))
 			retval = -EIO;
@@ -314,7 +329,11 @@ int pwm_ioctl(struct inode *inode, struct file *filp,
 		//retval = -EIO;
 		break;
 
-	case SCPWM:
+	case PWM_GET_FREQUENCY:
+		retval = dev->frequency;
+		break;
+
+	case PWM_SET_POLARITY:
 		if (scpwm(dev, arg))
 			retval = -EIO;
 		break;
@@ -435,7 +454,7 @@ static int pwm_open(struct inode *inode, struct file *filp)
 	   int f=PWM_FREQUENCY;
 	   int on=PWM_ON;
 	   int off=PWM_OFF; */
-	int f = SCPWM;
+	int f = PWM_SET_DUTYCYCLE;
 	dev = container_of(inode->i_cdev, struct pwm_dev, cdev);
 	filp->private_data = dev;	/* for other methods */
 
@@ -454,7 +473,7 @@ static int pwm_open(struct inode *inode, struct file *filp)
 		if (!dev->user_buff)
 			error = -ENOMEM;
 	}
-	printk(KERN_ALERT "\n%d \n", f);
+	printk(KERN_ALERT "%d \n", f);
 
 	up(&(dev->sem));
 
