@@ -111,11 +111,13 @@ int gpt_base[PWM_NR] = { PWM9_CTL_BASE, PWM10_CTL_BASE, PWM11_CTL_BASE };
 
 #define PWM_IOC_MAGIC  0x00
 
-#define PWM_DUTYCYCLE _IOW(PWM_IOC_MAGIC ,  1, int)
-#define PWM_FREQUENCY _IOW(PWM_IOC_MAGIC ,  2, int)
-#define PWM_ON _IO(PWM_IOC_MAGIC ,  3)
-#define PWM_OFF _IO(PWM_IOC_MAGIC ,  4)
-#define SCPWM _IOW(PWM_IOC_MAGIC ,  5, int)
-#define PWM_IOC_MAXNR 5
+#define PWM_SET_DUTYCYCLE _IOW(PWM_IOC_MAGIC ,  1, int)
+#define PWM_GET_DUTYCYCLE _IOW(PWM_IOC_MAGIC ,  2, int)
+#define PWM_SET_FREQUENCY _IOW(PWM_IOC_MAGIC ,  3, int)
+#define PWM_GET_FREQUENCY _IOW(PWM_IOC_MAGIC ,  4, int)
+#define PWM_ON _IO(PWM_IOC_MAGIC ,  5)
+#define PWM_OFF _IO(PWM_IOC_MAGIC ,  6)
+#define PWM_SET_POLARITY _IOW(PWM_IOC_MAGIC ,  7, int)
+#define PWM_IOC_MAXNR 7
 
 #endif /* ifndef PWM_H */
