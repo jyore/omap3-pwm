@@ -95,14 +95,12 @@ TODO:
    more granularity for duty-cycle adjustments. It might be sufficient
    to support this only on driver load.
 
-2. Allow specifying a positive or negative pulse (the TCLR SCPWM bit).
-
-3. The outputs were for experimentation. I'd probably change them to
+2. The outputs were for experimentation. I'd probably change them to
    be a little terser, more machine friendly.
 
-4. Investigate one-shot mode
+3. Investigate one-shot mode
 
-5. Investigate support for the prescaler in the TCLR config.
+4. Investigate support for the prescaler in the TCLR config.
 
 
 
@@ -126,4 +124,5 @@ index cebe1f5..2dad30c 100644
  # CONFIG_OMAP_MUX is not set
  CONFIG_OMAP_MCBSP=y
  CONFIG_OMAP_MBOX_FWK=m
+
 
