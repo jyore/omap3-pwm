@@ -239,6 +239,29 @@ static int scpwm(struct pwm_dev *dev, int sc)
 	return 0;
 }
 
+static int prescale(struct pwm_dev *dev, int div)
+{
+	void __iomem *base;
+	int i=0;
+	base = ioremap(dev->gpt.gpt_base, GPT_REGS_PAGE_SIZE);
+	if (!base) {
+		printk(KERN_ALERT "pwm_off(): ioremap failed\n");
+		return -1;
+	}
+
+	while(div>2){
+		i++;
+		div/=2;
+	}
+
+	dev->gpt.tclr |= GPT_TCLR_PRE; //enable prescaler
+	dev->gpt.tclr &= i<<2;	//set prescaler ratio
+	iowrite32(dev->gpt.tclr, base + GPT_TCLR);
+	iounmap(base);
+
+	return 0;
+}
+
 static int set_duty_cycle(struct pwm_dev *dev)
 {
 	unsigned int new_tmar;
@@ -312,7 +335,7 @@ int pwm_ioctl(struct inode *inode, struct file *filp,
 
 		if (dev->gpt.tclr & GPT_TCLR_ST) {	//PWM is on
 			retval = (100 * (dev->gpt.tmar - dev->gpt.tldr))
-			    / dev->gpt.num_freqs;	//actual duty cycle that was setup
+			    / dev->gpt.num_freqs;	//real duty cycle
 		} else {
 			printk(KERN_ALERT "PWM%d is OFF\n", dev->gpt.timer_num);
 			retval = -EIO;
@@ -336,6 +359,23 @@ int pwm_ioctl(struct inode *inode, struct file *filp,
 	case PWM_SET_POLARITY:
 		if (scpwm(dev, arg))
 			retval = -EIO;
+		break;
+
+	case PWM_SET_CLK:
+		if (dev->gpt.timer_num==9){
+			printk(KERN_ALERT "Only 32K clk can be used with GPT9\n");
+			retval = -EIO;
+		}else{
+			if(arg==1)
+			dev->gpt.input_freq = CLK_13K_FREQ;
+			else
+			dev->gpt.input_freq = CLK_32K_FREQ;		
+		}
+		break;
+
+	case PWM_SET_PRE:	
+		if(prescale(dev,arg))
+			retval= -EIO;
 		break;
 
 	default:		/* redundant, as cmd was checked against MAXNR */
@@ -592,7 +632,6 @@ static int __init pwm_init(void)
 			pwm_devs[i].gpt.mux_offset = gpt_offset[i];
 			pwm_devs[i].gpt.gpt_base = gpt_base[i];
 			pwm_devs[i].gpt.input_freq = CLK_32K_FREQ;
-
 			pwm_devs[i].gpt.tldr = DEFAULT_TLDR;
 			pwm_devs[i].gpt.tmar = DEFAULT_TMAR;
 			pwm_devs[i].gpt.tclr = DEFAULT_TCLR;
