@@ -124,5 +124,3 @@ index cebe1f5..2dad30c 100644
  # CONFIG_OMAP_MUX is not set
  CONFIG_OMAP_MCBSP=y
  CONFIG_OMAP_MBOX_FWK=m
-
-
