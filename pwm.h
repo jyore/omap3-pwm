@@ -43,6 +43,7 @@
 #define PWM_ENABLE_MUX		0x0002	/* IDIS | PTD | DIS | M2 */
 
 #define CLK_32K_FREQ	32768
+#define CLK_13K_FREQ	13312
 #define CLK_SYS_FREQ	13000000
 
 #define GPTIMER8		0x4903E000
@@ -118,6 +119,8 @@ int gpt_base[PWM_NR] = { PWM9_CTL_BASE, PWM10_CTL_BASE, PWM11_CTL_BASE };
 #define PWM_ON _IO(PWM_IOC_MAGIC ,  5)
 #define PWM_OFF _IO(PWM_IOC_MAGIC ,  6)
 #define PWM_SET_POLARITY _IOW(PWM_IOC_MAGIC ,  7, int)
-#define PWM_IOC_MAXNR 7
+#define PWM_SET_CLK _IOW(PWM_IOC_MAGIC ,  8, int)   
+#define PWM_SET_PRE _IOW(PWM_IOC_MAGIC ,  9, int)   
+#define PWM_IOC_MAXNR 9
 
 #endif /* ifndef PWM_H */
