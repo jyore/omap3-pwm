@@ -1,15 +1,15 @@
 # cross-compile module makefile
 
 ifneq ($(KERNELRELEASE),)
-    obj-m := pwm.o
+    obj-m := pwm.o pwmsp.o pwmsp_lib.o
 else
-    PWD := $(shell pwd)
+    SUBDIRS := $(shell pwd)
 
 default:
 ifeq ($(strip $(KERNELDIR)),)
 	$(error "KERNELDIR is undefined!")
 else
-	$(MAKE) -C $(KERNELDIR) M=$(PWD) modules 
+	$(MAKE) -C $(KERNELDIR) M=$(SUBDIRS) modules 
 endif
 
 
@@ -17,4 +17,5 @@ clean:
 	rm -rf *~ *.ko *.o *.mod.c modules.order Module.symvers .pwm* .tmp_versions
 
 endif
+
 
