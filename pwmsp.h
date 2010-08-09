@@ -4,13 +4,13 @@
 #define PWMSP_DEBUG 0
 #define PWMSP_MAX_TREBLE 1
 #define PWMSP_DEFAULT_TREBLE 0
-#define PWMSP_DEFAULT_SRATE 128 // 128, 256, 512 ... 16384Kb/Sec how to decide??
+#define PWMSP_DEFAULT_SRATE 128	// 128, 256, 512 ... 16384Kb/Sec how to decide??
 #define PWMSP_MAX_PERIOD_SIZE	(64*1024)
 #define PWMSP_MAX_PERIODS	512
 #define PWMSP_BUFFER_SIZE	(128*1024)
 #define DATA_BITS	256
-#define BASE_CLOCK 	(DATA_BITS*8192) //256*8khz
-#define SLEEP_TIME	(DATA_BITS*1000/BASE_CLOCK) //milliseconds
+#define BASE_CLOCK 	(DATA_BITS*8192)	//256*8khz
+#define SLEEP_TIME	(DATA_BITS*1000/BASE_CLOCK)	//milliseconds
 /*defines for ioctl()*/
 #include "pwm.h"
 struct snd_pwmsp {
@@ -35,7 +35,7 @@ extern struct snd_pwmsp pwmsp_chip;
 extern void pwmsp_sync_stop(struct snd_pwmsp *chip);
 extern int snd_pwmsp_new_pcm(struct snd_pwmsp *chip);
 extern struct pwm_dev *pwm_devs;
-extern int set_pwm_frequency(struct pwm_dev *,int);
-extern int set_duty_cycle(struct pwm_dev *,int);
+extern int set_pwm_frequency(struct pwm_dev *, int);
+extern int set_duty_cycle(struct pwm_dev *, int);
 extern int pwm_off(struct pwm_dev *);
 #endif
