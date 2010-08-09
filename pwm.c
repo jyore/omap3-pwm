@@ -139,10 +139,11 @@ static int restore_mux(struct pwm_dev *dev)
 	return 0;
 }
 
-static int set_pwm_frequency(struct pwm_dev *dev)
+static int set_pwm_frequency(struct pwm_dev *dev, int freq)
 {
 	void __iomem *base;
 	//int frequency = dev->frequency;
+	dev->frequency=freq;
 	base = ioremap(dev->gpt.gpt_base, GPT_REGS_PAGE_SIZE);
 	if (!base) {
 		printk(KERN_ALERT "set_pwm_frequency(): ioremap failed\n");
@@ -262,10 +263,11 @@ static int prescale(struct pwm_dev *dev, int div)
 	return 0;
 }
 
-static int set_duty_cycle(struct pwm_dev *dev)
+static int set_duty_cycle(struct pwm_dev *dev,int duty_cycle)
 {
 	unsigned int new_tmar;
 	pwm_off(dev);
+	dev->duty_cycle=duty_cycle;
 
 	if (dev->duty_cycle == 0)
 		return 0;
@@ -326,8 +328,8 @@ int pwm_ioctl(struct inode *inode, struct file *filp,
 		break;
 
 	case PWM_SET_DUTYCYCLE:
-		dev->duty_cycle = arg;
-		if (set_duty_cycle(dev))
+		//dev->duty_cycle = arg;
+		if (set_duty_cycle(dev,arg))
 			retval = -EIO;
 		break;
 
@@ -344,8 +346,8 @@ int pwm_ioctl(struct inode *inode, struct file *filp,
 		break;
 
 	case PWM_SET_FREQUENCY:
-		dev->frequency = arg;
-		if (set_pwm_frequency(dev))
+		//dev->frequency = arg;
+		if (set_pwm_frequency(dev,arg))
 			retval = -EIO;
 
 		//if(set_duty_cycle(dev))
@@ -403,7 +405,7 @@ static ssize_t pwm_read(struct file *filp, char __user * buff, size_t count,
 	if (down_interruptible(&(dev->sem)))
 		return -ERESTARTSYS;
 
-	if (set_pwm_frequency(dev))
+	if (set_pwm_frequency(dev,dev->frequency))
 		error = -EIO;
 
 	if (dev->gpt.tclr & GPT_TCLR_ST) {
@@ -460,7 +462,7 @@ static ssize_t pwm_write(struct file *filp, const char __user * buff,
 	else
 		len = count;
 
-	if (set_pwm_frequency(dev))
+	if (set_pwm_frequency(dev,dev->frequency))
 		error = -EIO;
 
 	memset(dev->user_buff, 0, 16);
@@ -473,7 +475,7 @@ static ssize_t pwm_write(struct file *filp, const char __user * buff,
 
 	dev->duty_cycle = simple_strtoul(dev->user_buff, NULL, 0);
 
-	set_duty_cycle(dev);
+	set_duty_cycle(dev,dev->duty_cycle);
 
 	/* pretend we ate it all */
 	*offp += count;
@@ -505,7 +507,7 @@ static int pwm_open(struct inode *inode, struct file *filp)
 	if (dev->gpt.old_mux == 0) {
 		if (init_mux(dev))
 			error = -EIO;
-		else if (set_pwm_frequency(dev))
+		else if (set_pwm_frequency(dev,dev->frequency))
 			error = -EIO;
 	}
 
@@ -668,6 +670,10 @@ static int __init pwm_init(void)
 
 module_init(pwm_init);
 
+EXPORT_SYMBOL(pwm_devs);
+EXPORT_SYMBOL(set_pwm_frequency);
+EXPORT_SYMBOL(set_duty_cycle);
+EXPORT_SYMBOL(pwm_off);
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Scott Ellis - Jumpnow");
 MODULE_DESCRIPTION("PWM example for OMAP3");
