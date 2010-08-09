@@ -9,10 +9,10 @@
 
 static int pwmsp_start_playing(struct snd_pwmsp *chip)
 {
-//	unsigned long ns;
+//      unsigned long ns;
 	struct snd_pcm_substream *substream;
 	struct snd_pcm_runtime *runtime;
-	int duty_cycle,sleep_time,val;
+	int duty_cycle, sleep_time, val;
 #if PWMSP_DEBUG
 	printk(KERN_INFO "pwmsp: start_playing called\n");
 #endif
@@ -26,18 +26,18 @@ static int pwmsp_start_playing(struct snd_pwmsp *chip)
 		return 0;
 
 	runtime = substream->runtime;
-	sleep_time=SLEEP_TIME;
+	sleep_time = SLEEP_TIME;
 	/* assume it is mono! */
-	while(chip->playback_ptr!= runtime->dma_bytes){
-		val = runtime->dma_area[chip->playback_ptr ];
-		duty_cycle= val*100/256 ;
-		if (set_pwm_frequency(pwm_devs,BASE_CLOCK) == -1)
+	while (chip->playback_ptr != runtime->dma_bytes) {
+		val = runtime->dma_area[chip->playback_ptr];
+		duty_cycle = val * 100 / 256;
+		if (set_pwm_frequency(pwm_devs, BASE_CLOCK) == -1)
 			return -EIO;
 
-		if (set_duty_cycle(pwm_devs,duty_cycle) == -1)
+		if (set_duty_cycle(pwm_devs, duty_cycle) == -1)
 			return -EIO;
 		msleep(sleep_time);
-		chip->playback_ptr+=sizeof(char);
+		chip->playback_ptr += sizeof(char);
 	}
 
 	if (pwm_off(pwm_devs) == -1)
@@ -83,13 +83,13 @@ static int snd_pwmsp_playback_close(struct snd_pcm_substream *substream)
 }
 
 static int snd_pwmsp_playback_hw_params(struct snd_pcm_substream *substream,
-				       struct snd_pcm_hw_params *hw_params)
+					struct snd_pcm_hw_params *hw_params)
 {
 	struct snd_pwmsp *chip = snd_pcm_substream_chip(substream);
 	int err;
 	pwmsp_sync_stop(chip);
 	err = snd_pcm_lib_malloc_pages(substream,
-				      params_buffer_bytes(hw_params));
+				       params_buffer_bytes(hw_params));
 	if (err < 0)
 		return err;
 	return 0;
@@ -110,18 +110,18 @@ static int snd_pwmsp_playback_prepare(struct snd_pcm_substream *substream)
 	struct snd_pwmsp *chip = snd_pcm_substream_chip(substream);
 #if PWMSP_DEBUG
 	printk(KERN_INFO "pwmsp: prepare called, "
-			"size=%zi psize=%zi f=%zi f1=%i\n",
-			snd_pcm_lib_buffer_bytes(substream),
-			snd_pcm_lib_period_bytes(substream),
-			snd_pcm_lib_buffer_bytes(substream) /
-			snd_pcm_lib_period_bytes(substream),
-			substream->runtime->periods);
+	       "size=%zi psize=%zi f=%zi f1=%i\n",
+	       snd_pcm_lib_buffer_bytes(substream),
+	       snd_pcm_lib_period_bytes(substream),
+	       snd_pcm_lib_buffer_bytes(substream) /
+	       snd_pcm_lib_period_bytes(substream),
+	       substream->runtime->periods);
 #endif
 	pwmsp_sync_stop(chip);
 	chip->playback_ptr = 0;
 	chip->period_ptr = 0;
 	chip->fmt_size =
-		snd_pcm_format_physical_width(substream->runtime->format) >> 3;
+	    snd_pcm_format_physical_width(substream->runtime->format) >> 3;
 	chip->is_signed = snd_pcm_format_signed(substream->runtime->format);
 	return 0;
 }
@@ -147,7 +147,7 @@ static int snd_pwmsp_trigger(struct snd_pcm_substream *substream, int cmd)
 }
 
 static snd_pcm_uframes_t snd_pwmsp_playback_pointer(struct snd_pcm_substream
-						   *substream)
+						    *substream)
 {
 	struct snd_pwmsp *chip = snd_pcm_substream_chip(substream);
 	unsigned int pos;
@@ -161,8 +161,7 @@ static struct snd_pcm_hardware snd_pwmsp_playback = {
 	.info = (SNDRV_PCM_INFO_INTERLEAVED |
 		 SNDRV_PCM_INFO_HALF_DUPLEX |
 		 SNDRV_PCM_INFO_MMAP | SNDRV_PCM_INFO_MMAP_VALID),
-	.formats = (SNDRV_PCM_FMTBIT_U8
-	    ),
+	.formats = (SNDRV_PCM_FMTBIT_U8),
 	.rates = SNDRV_PCM_RATE_KNOT,
 	.rate_min = PWMSP_DEFAULT_SRATE,
 	.rate_max = PWMSP_DEFAULT_SRATE,
@@ -183,7 +182,7 @@ static int snd_pwmsp_playback_open(struct snd_pcm_substream *substream)
 #if PWMSP_DEBUG
 	printk(KERN_INFO "pwmsp: open called\n");
 #endif
-//	chip->fd = open("/dev/pwm9", O_RDWR);
+//      chip->fd = open("/dev/pwm9", O_RDWR);
 	if (atomic_read(&chip->active)) {
 		printk(KERN_ERR "pwmsp: still active!!\n");
 		return -EBUSY;
@@ -207,26 +206,27 @@ static struct snd_pcm_ops snd_pwmsp_playback_ops = {
 int __devinit snd_pwmsp_new_pcm(struct snd_pwmsp *chip)
 {
 	int err;
-	printk(KERN_ALERT"210 \n");
+	printk(KERN_ALERT "210 \n");
 	err = snd_pcm_new(chip->card, "pwmspeaker", 0, 1, 0, &chip->pcm);
 	if (err < 0)
 		return err;
-	printk(KERN_ALERT"214 \n");
+	printk(KERN_ALERT "214 \n");
 	snd_pcm_set_ops(chip->pcm, SNDRV_PCM_STREAM_PLAYBACK,
 			&snd_pwmsp_playback_ops);
 
 	chip->pcm->private_data = chip;
 	chip->pcm->info_flags = SNDRV_PCM_INFO_HALF_DUPLEX;
 	strcpy(chip->pcm->name, "pwmsp");
-	printk(KERN_ALERT"ping \n");
+	printk(KERN_ALERT "ping \n");
 	snd_pcm_lib_preallocate_pages_for_all(chip->pcm,
 					      SNDRV_DMA_TYPE_CONTINUOUS,
 					      snd_dma_continuous_data
 					      (GFP_KERNEL), PWMSP_BUFFER_SIZE,
 					      PWMSP_BUFFER_SIZE);
-	printk(KERN_ALERT"ping2 \n");
+	printk(KERN_ALERT "ping2 \n");
 	return 0;
 }
+
 //module_init(snd_pwmsp_new_pcm);
 MODULE_LICENSE("GPL");
 EXPORT_SYMBOL(pwmsp_sync_stop);
