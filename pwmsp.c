@@ -9,7 +9,6 @@
 #include <asm/bitops.h>
 #include "pwmsp.h"
 
-
 MODULE_DESCRIPTION("PWM-Speaker driver");
 MODULE_LICENSE("GPL");
 MODULE_SUPPORTED_DEVICE("{{PWM-Speaker, pwmsp}}");
@@ -31,24 +30,24 @@ struct snd_pwmsp pwmsp_chip;
 static int __devinit snd_pwmsp_create(struct snd_card *card)
 {
 	static struct snd_device_ops ops = { };
-//	struct timespec tp;
+//      struct timespec tp;
 	int err;
 #if PWMSP_DEBUG
 	printk("pwmsp: lpj=%li, min_div=%i, res=%li\n",
 	       loops_per_jiffy, min_div, tp.tv_nsec);
 #endif
 
-	pwmsp_chip.max_treble = PWMSP_MAX_TREBLE ;//min(order, PWMSP_MAX_TREBLE);
+	pwmsp_chip.max_treble = PWMSP_MAX_TREBLE;	//min(order, PWMSP_MAX_TREBLE);
 	pwmsp_chip.treble = min(pwmsp_chip.max_treble, PWMSP_DEFAULT_TREBLE);
 	pwmsp_chip.playback_ptr = 0;
 	pwmsp_chip.period_ptr = 0;
 	atomic_set(&pwmsp_chip.active, 0);
 	pwmsp_chip.enable = 1;
-	
+
 	spin_lock_init(&pwmsp_chip.substream_lock);
 
 	pwmsp_chip.card = card;
-	pwmsp_chip.port = 0x61;//what?
+	pwmsp_chip.port = 0x61;	//what?
 	pwmsp_chip.irq = -1;
 	pwmsp_chip.dma = -1;
 
@@ -107,7 +106,6 @@ static int __devinit alsa_card_pwmsp_init(struct device *dev)
 		printk(KERN_ERR "PWM-Speaker initialization failed.\n");
 		return err;
 	}
-
 #ifdef CONFIG_DEBUG_PAGEALLOC
 	/* Well, CONFIG_DEBUG_PAGEALLOC makes the sound horrible. Lets alert */
 	printk(KERN_WARNING "PWMSP: CONFIG_DEBUG_PAGEALLOC is enabled, "
@@ -127,14 +125,14 @@ static int __devinit pwmsp_probe(struct platform_device *dev)
 	int err;
 
 	/*err = pwmspkr_input_init(&pwmsp_chip.input_dev, &dev->dev);
-	if (err < 0)
-		return err;*/
+	   if (err < 0)
+	   return err; */
 
 	err = alsa_card_pwmsp_init(&dev->dev);
 	/*if (err < 0) {
-		pwmspkr_input_remove(pwmsp_chip.input_dev);
-		return err;
-	}*/
+	   pwmspkr_input_remove(pwmsp_chip.input_dev);
+	   return err;
+	   } */
 
 	platform_set_drvdata(dev, &pwmsp_chip);
 	return 0;
@@ -144,7 +142,7 @@ static int __devexit pwmsp_remove(struct platform_device *dev)
 {
 	struct snd_pwmsp *chip = platform_get_drvdata(dev);
 	alsa_card_pwmsp_exit(chip);
-//	pwmspkr_input_remove(chip->input_dev);
+//      pwmspkr_input_remove(chip->input_dev);
 	platform_set_drvdata(dev, NULL);
 	return 0;
 }
@@ -165,7 +163,7 @@ static int pwmsp_suspend(struct platform_device *dev, pm_message_t state)
 }
 #else
 #define pwmsp_suspend NULL
-#endif	/* CONFIG_PM */
+#endif /* CONFIG_PM */
 
 static void pwmsp_shutdown(struct platform_device *dev)
 {
@@ -174,23 +172,23 @@ static void pwmsp_shutdown(struct platform_device *dev)
 }
 
 static struct platform_driver pwmsp_platform_driver = {
-	.driver		= {
-		.name	= "pwmspkr",
-		.owner	= THIS_MODULE,
-	},
-	.probe		= pwmsp_probe,
-	.remove		= __devexit_p(pwmsp_remove),
-	.suspend	= pwmsp_suspend,
-	.shutdown	= pwmsp_shutdown,
+	.driver = {
+		   .name = "pwmspkr",
+		   .owner = THIS_MODULE,
+		   },
+	.probe = pwmsp_probe,
+	.remove = __devexit_p(pwmsp_remove),
+	.suspend = pwmsp_suspend,
+	.shutdown = pwmsp_shutdown,
 };
 
 static int __init pwmsp_init(void)
 {
-	printk(KERN_ALERT"189 \n");
+	printk(KERN_ALERT "189 \n");
 	if (!enable)
 		return -ENODEV;
 	return platform_driver_register(&pwmsp_platform_driver);
-	printk(KERN_ALERT"193 \n");
+	printk(KERN_ALERT "193 \n");
 }
 
 static void __exit pwmsp_exit(void)
