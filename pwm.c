@@ -37,6 +37,7 @@
 #include <linux/moduleparam.h>
 #include <linux/string.h>
 #include <linux/ioctl.h>
+#include <linux/slab.h>
 
 #include "pwm.h"
 
@@ -287,7 +288,7 @@ static int set_duty_cycle(struct pwm_dev *dev,int duty_cycle)
 	return pwm_on(dev);
 }
 
-int pwm_ioctl(struct inode *inode, struct file *filp,
+long pwm_ioctl(struct file *filp,
 	      unsigned int cmd, unsigned long arg)
 {
 
@@ -528,7 +529,7 @@ static struct file_operations pwm_fops = {
 	.read = pwm_read,
 	.write = pwm_write,
 	.open = pwm_open,
-	.ioctl = pwm_ioctl,
+	.unlocked_ioctl = pwm_ioctl,
 };
 
 static int __init pwm_init_cdev(struct pwm_dev *dev, int index)

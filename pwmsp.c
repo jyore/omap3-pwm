@@ -1,4 +1,5 @@
 #include <linux/init.h>
+#include <linux/slab.h>
 #include <linux/moduleparam.h>
 #include <linux/platform_device.h>
 #include <sound/core.h>
@@ -67,7 +68,7 @@ static int __devinit snd_card_pwmsp_probe(int devnum, struct device *dev)
 	if (devnum != 0)
 		return -EINVAL;
 
-	card = snd_card_new(index, id, THIS_MODULE, 0);
+	snd_card_create(index, id, THIS_MODULE, 0,&card);
 	if (!card)
 		return -ENOMEM;
 
